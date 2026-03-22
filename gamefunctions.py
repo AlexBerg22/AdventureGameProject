@@ -2,17 +2,18 @@
 #Xander Bergman
 #2/28/2026
 
-#Defines a function for purchasing items at different prices
-#Defiens a function for randomly generating unique monsters
+#Defines functions for the following:
+#purchasing items at different prices, randomly generating unique monsters
+#printing a welcome message for the user, and printing a shop sign
 
 #random numbers are required for monster generation so random is imported
 import random
 
 def purchase_item(itemPrice,startingMoney,quantityToPurchase=1):
-    """Function allows you to purchase an item and subtracts its cost from your starting money.
-    Function purchases only one item by default but can purchase multiple at a time.
-    Function takes the items price, your starting money, and the desired quantity to purchace (defaulting to 1) as input.
-    Function returns a list containing the number of items purchased and the leftover money."""
+    """Allows you to purchase an item and subtracts its cost from your starting money.
+    Purchases only one item by default but can purchase multiple at a time.
+    Takes the items price, your starting money, and the desired quantity to purchace (defaulting to 1) as input.
+    Returns a list containing the number of items purchased and the leftover money."""
     #if-else function ensures you cannot buy more items than you can afford
     if (quantityToPurchase) > (startingMoney // itemPrice):
         num_purchased = startingMoney // itemPrice
@@ -23,12 +24,11 @@ def purchase_item(itemPrice,startingMoney,quantityToPurchase=1):
     return (num_purchased, leftover_money)
 
 def new_random_monster():
-    """Function creates a random monster with unique stats from one of four types.
-    Function takes no inputs.
-    Function returns a dictionary with the monsters name, description, health, power, and money."""
+    """Creates a random monster with unique stats from one of four types.
+    Takes no inputs, and returns a dictionary with the monsters name, description, health, power, and money."""
     #randomly chooses an int 1 - 4, each int corresponds to a monster type 
-    rng = random.randint(1,4)
-    if rng == 1:
+    rand_monster_type = random.randint(1,4)
+    if rand_monster_type == 1:
      #unique 'random.randint's are used after monster type is chosen
      #to generate its stats within a given range
      return {
@@ -39,7 +39,7 @@ def new_random_monster():
         "power": random.randint(2,5),
         "money": random.randint(25, 100),
         }
-    elif rng == 2:
+    elif rand_monster_type == 2:
       return {
         "name": "Beholder",
         "description": "They say that beauty is in its eye, but you really don\'t see any."
@@ -48,7 +48,7 @@ def new_random_monster():
         "power": random.randint(20,30),
         "money": random.randint(500, 750),
         }
-    elif rng == 3:
+    elif rand_monster_type == 3:
       return {
         "name": "Ancient Dragon",
         "description": "The better half of D&D approaches!\n"
@@ -57,7 +57,7 @@ def new_random_monster():
         "power": random.randint(25,30),
         "money": random.randint(800,1200),
         }
-    elif rng == 4:
+    elif rand_monster_type == 4:
        return {
         "name": "Troll",
         "description": "Someone's trying to stir up trouble online! Get them!",
@@ -67,17 +67,17 @@ def new_random_monster():
         }
 
 def print_welcome(name, width):
-    """Function prints a centered welcome message, taking a name and width as input.""" 
+    """Prints a centered welcome message, taking a name and width as input.""" 
     welcome_message = f"Hello, {name}!"
     print(f"'{welcome_message:^{width}}'")
 
 
 def print_shop_menu(item1Name, item1Price, item2Name, item2Price):
-    """Function prints a sign displaying purchasable items and their prices.
-    Function takes two item names and two prices as input."""
+    """Prints a sign displaying purchasable items and their prices.
+    Takes two item names and two prices as input."""
     #converts the item prices into easier to align strings and rounds them to two decimal places
     item1cost = f"${item1Price:.2f}"
-    item2cost = f"${item2Price}"
+    item2cost = f"${item2Price:.2f}"
     print("/" + "-" * 20 + "\\")
     print(f"|{item1Name:12}{item1cost:>8}|")
     print(f"|{item2Name:12}{item2cost:>8}|")
