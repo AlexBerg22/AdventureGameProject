@@ -1,3 +1,9 @@
+"""Imports the functions from gamefunctions and calls each one once.
+
+Each function is separated by a newline.
+print_welcome asks the user to input their name.
+print_shop_menu asks the user to enter two item names."""
+
 #game.py
 #Xander Bergman
 #3/21/206
