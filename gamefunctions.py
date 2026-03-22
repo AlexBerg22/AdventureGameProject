@@ -1,19 +1,30 @@
+"""Defines 4 different game functions for a several purposes.
+
+purchase_item allows the user to buy items.
+new_random_monster randomly generates a monster with unique stats.
+print_welcome prints a centered welcome message for the user.
+print_shop_menu prints a sign displaying two items and their prices."""
+
 #gamefunctions.py
 #Xander Bergman
 #2/28/2026
-
-#Defines functions for the following:
-#purchasing items at different prices, randomly generating unique monsters
-#printing a welcome message for the user, and printing a shop sign
 
 #random numbers are required for monster generation so random is imported
 import random
 
 def purchase_item(itemPrice,startingMoney,quantityToPurchase=1):
-    """Allows you to purchase an item and subtracts its cost from your starting money.
-    Purchases only one item by default but can purchase multiple at a time.
-    Takes the items price, your starting money, and the desired quantity to purchace (defaulting to 1) as input.
-    Returns a list containing the number of items purchased and the leftover money."""
+    """
+    Allows the user to buy items and automatically subtracts their cost.
+
+    Parameters:
+        itemPrice (int): Cost of the item to be purchased.
+        startingMoney (int): Amount of money the user has.
+        quantityToPurchase (int): Number of item to purchase (default 1).
+
+    Returns:
+        num_purchased (int): The number of items successfully purchased.
+        leftover_money (int): The amout of money the user has leftover.
+    """
     #if-else function ensures you cannot buy more items than you can afford
     if (quantityToPurchase) > (startingMoney // itemPrice):
         num_purchased = startingMoney // itemPrice
@@ -24,8 +35,20 @@ def purchase_item(itemPrice,startingMoney,quantityToPurchase=1):
     return (num_purchased, leftover_money)
 
 def new_random_monster():
-    """Creates a random monster with unique stats from one of four types.
-    Takes no inputs, and returns a dictionary with the monsters name, description, health, power, and money."""
+    """
+    Creates a random monster with unique stats from one of four types.
+
+    Parameters:
+        None
+
+    Returns:
+        A dictionary with the following elements:
+            name (str)
+            health (int)
+            description (str)
+            power (int)
+            money (int)
+    """
     #randomly chooses an int 1 - 4, each int corresponds to a monster type 
     rand_monster_type = random.randint(1,4)
     if rand_monster_type == 1:
@@ -67,14 +90,35 @@ def new_random_monster():
         }
 
 def print_welcome(name, width):
-    """Prints a centered welcome message, taking a name and width as input.""" 
+    """
+    Prints a centered welcome message with the user\'s name.
+
+    Parameters:
+        name (str): The user\'s name.
+        width (int): The width the message should be.
+
+    Returns:
+        Prints \'name\' centered at \'width\' between two \' characters.
+    """ 
     welcome_message = f"Hello, {name}!"
     print(f"'{welcome_message:^{width}}'")
 
 
 def print_shop_menu(item1Name, item1Price, item2Name, item2Price):
-    """Prints a sign displaying purchasable items and their prices.
-    Takes two item names and two prices as input."""
+    """
+    Prints a sign displaying 2 purchasable items and their prices.
+    
+    Parameters:
+        item1Name (str): The name of the first desplayed item.
+        item1Price (float): The price of the first desplayed item.
+        item2Name (str): The name of the second desplayed item.
+        item2Price (float): The price of the second desplayed item.
+
+    Returns:
+        A four line sign with the items aligned on the left and
+        the prices aligned on the right.
+        Items are framed using -, \\, and / characters.
+    """
     #converts the item prices into easier to align strings and rounds them to two decimal places
     item1cost = f"${item1Price:.2f}"
     item2cost = f"${item2Price:.2f}"
@@ -83,48 +127,65 @@ def print_shop_menu(item1Name, item1Price, item2Name, item2Price):
     print(f"|{item2Name:12}{item2cost:>8}|")
     print("\\" + "-" * 20 + "/")
 
-#functions are each called three times here for proof they work
-num_purchased, leftover_money = purchase_item(123, 1000, 3)
-print(num_purchased)
-print(leftover_money)
-print()
-num_purchased, leftover_money = purchase_item(341, 2112)
-print(num_purchased)
-print(leftover_money)
-print()
-num_purchased, leftover_money = purchase_item(3141, 2112)
-print(num_purchased)
-print(leftover_money)
-print()
-monster = new_random_monster()
-print(monster["name"])
-print(monster["description"])
-print(monster["health"])
-print(monster["power"])
-print(monster["money"])
-print()
-monster = new_random_monster()
-print(monster["name"])
-print(monster["description"])
-print(monster["health"])
-print(monster["power"])
-print(monster["money"])
-print()
-monster = new_random_monster()
-print(monster["name"])
-print(monster["description"])
-print(monster["health"])
-print(monster["power"])
-print(monster["money"])
-print()
+def test_function():
+    """
+    Runs a test of each function in gamefunctions.py 3 times.
 
-print_welcome("Xander", 20)
-print_welcome("Ember", 40)
-print_welcome("Ranger", 15)
-print()
+    Parameters:
+        None
 
-print_shop_menu("Apple", 31, "Pear", 1.234)
-print()
-print_shop_menu("Egg", .23, "Bag of Oats", 12.34)
-print()
-print_shop_menu("Big Sword", 99.99, "Biger Sword", 100)
+    Returns:
+        Each function three seperate times.
+        Functions are separated by a newline.
+    """
+    
+    num_purchased, leftover_money = purchase_item(123, 1000, 3)
+    print(num_purchased)
+    print(leftover_money)
+    print()
+    num_purchased, leftover_money = purchase_item(341, 2112)
+    print(num_purchased)
+    print(leftover_money)
+    print()
+    num_purchased, leftover_money = purchase_item(3141, 2112)
+    print(num_purchased)
+    print(leftover_money)
+    print()
+    
+    monster = new_random_monster()
+    print(monster["name"])
+    print(monster["description"])
+    print(monster["health"])
+    print(monster["power"])
+    print(monster["money"])
+    print()
+    monster = new_random_monster()
+    print(monster["name"])
+    print(monster["description"])
+    print(monster["health"])
+    print(monster["power"])
+    print(monster["money"])
+    print()
+    monster = new_random_monster()
+    print(monster["name"])
+    print(monster["description"])
+    print(monster["health"])
+    print(monster["power"])
+    print(monster["money"])
+    print()
+
+    print_welcome("Xander", 20)
+    print()
+    print_welcome("Ember", 40)
+    print()
+    print_welcome("Ranger", 15)
+    print()
+
+    print_shop_menu("Apple", 31, "Pear", 1.234)
+    print()
+    print_shop_menu("Egg", .23, "Bag of Oats", 12.34)
+    print()
+    print_shop_menu("Big Sword", 99.99, "Biger Sword", 100)
+
+if __name__ == "__main__":
+    test_function()
