@@ -16,12 +16,12 @@ def purchase_item(itemPrice,startingMoney,quantityToPurchase=1):
     """
     Allows the user to buy items and automatically subtracts their cost.
 
-    Parameters:
+    Parameters: 
         itemPrice (int): Cost of the item to be purchased.
         startingMoney (int): Amount of money the user has.
         quantityToPurchase (int): Number of item to purchase (default 1).
 
-    Returns:
+    Returns: 
         num_purchased (int): The number of items successfully purchased.
         leftover_money (int): The amout of money the user has leftover.
     """
@@ -38,10 +38,10 @@ def new_random_monster():
     """
     Creates a random monster with unique stats from one of four types.
 
-    Parameters:
+    Parameters: 
         None
 
-    Returns:
+    Returns: 
         A dictionary with the following elements:
             name (str)
             health (int)
@@ -93,7 +93,7 @@ def print_welcome(name, width):
     """
     Prints a centered welcome message with the user\'s name.
 
-    Parameters:
+    Parameters: 
         name (str): The user\'s name.
         width (int): The width the message should be.
 
@@ -108,13 +108,13 @@ def print_shop_menu(item1Name, item1Price, item2Name, item2Price):
     """
     Prints a sign displaying 2 purchasable items and their prices.
     
-    Parameters:
+    Parameters: 
         item1Name (str): The name of the first desplayed item.
         item1Price (float): The price of the first desplayed item.
         item2Name (str): The name of the second desplayed item.
         item2Price (float): The price of the second desplayed item.
 
-    Returns:
+    Returns: 
         A four line sign with the items aligned on the left and
         the prices aligned on the right.
         Items are framed using -, \\, and / characters.
@@ -131,10 +131,10 @@ def test_function():
     """
     Runs a test of each function in gamefunctions.py 3 times.
 
-    Parameters:
+    Parameters: 
         None
 
-    Returns:
+    Returns: 
         Each function three seperate times.
         Functions are separated by a newline.
     """
