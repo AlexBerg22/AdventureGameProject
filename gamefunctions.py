@@ -3,7 +3,10 @@
 purchase_item allows the user to buy items.
 new_random_monster randomly generates a monster with unique stats.
 print_welcome prints a centered welcome message for the user.
-print_shop_menu prints a sign displaying two items and their prices."""
+print_shop_menu prints a sign displaying two items and their prices.
+get_total_stats updates the player's current power when needed.
+fight_input gets the players action for fight_monster_loop.
+"""
 
 #gamefunctions.py
 #Xander Bergman
@@ -56,8 +59,8 @@ def new_random_monster():
      #to generate its stats within a given range
      return {
         "name": "Goblin",
-        "description": "A common neusance. It seems to have ammased some wealth from stealing."
-        "Perhaps you could \"liberate\" this wealth?",
+        "description": ("A common neusance. It seems to have ammased some wealth from stealing. "
+        "Perhaps you could \"liberate\" this wealth?"),
         "health": random.randint(5,15),
         "power": random.randint(2,5),
         "money": random.randint(25, 100),
@@ -65,8 +68,8 @@ def new_random_monster():
     elif rand_monster_type == 2:
       return {
         "name": "Beholder",
-        "description": "They say that beauty is in its eye, but you really don\'t see any."
-        "Behold it while you still can or draw your weapon and fight!",
+        "description": ("They say that beauty is in its eye, but you really don\'t see any. "
+        "Behold it while you still can or draw your weapon and fight!"),
         "health": random.randint(75,125),
         "power": random.randint(20,30),
         "money": random.randint(500, 750),
@@ -74,8 +77,8 @@ def new_random_monster():
     elif rand_monster_type == 3:
       return {
         "name": "Ancient Dragon",
-        "description": "The better half of D&D approaches!\n"
-        "Ready your weapon and claim the dragon\'s hoard!",
+        "description": ("The better half of D&D approaches! "
+        "Ready your weapon and claim the dragon\'s hoard!"),
         "health": random.randint(100,150),
         "power": random.randint(25,30),
         "money": random.randint(800,1200),
@@ -126,6 +129,41 @@ def print_shop_menu(item1Name, item1Price, item2Name, item2Price):
     print(f"|{item1Name:12}{item1cost:>8}|")
     print(f"|{item2Name:12}{item2cost:>8}|")
     print("\\" + "-" * 20 + "/")
+
+def get_total_stats(state):
+    """Calculates power based on equipped items.
+    Parameters:
+        state (dict): The gamestate dictionary
+
+    Returns:
+        None
+    """
+    #power_bonus defaults to 0, then checks for equiped weapon
+    power_bonus = 0
+    for item in state["inventory"]:
+        #if there is an equipped weapon, add its power to base power
+        if item.get("equipped"):
+            power_bonus += item.get("power_bonus", 0)
+    #update state dict with new calculated power
+    state["current_power"] = state["base_power"] + power_bonus
+
+def fight_input(state, monster):
+    """
+    Provides the player with information during fights and gets their action.
+
+    Parameters:
+        state (dict): The gamestate dictionary
+        monster (dict): Generated from gamefunctions.new_random_monster
+
+    Returns:
+        action (str): The player's selected action.
+    """
+    #prints display information and options to the player
+    print(f"\nYour HP: {state["player_health"]}, {monster["name"]} HP: {monster["health"]}")
+    print("What would you like to do?\n")
+    print("1) Fight \n2) Use Bomb \n3) Run away")
+    #gets and returns the player's action
+    return input()
 
 def test_function():
     """
