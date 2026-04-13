@@ -6,6 +6,7 @@ print_welcome prints a centered welcome message for the user.
 print_shop_menu prints a sign displaying two items and their prices.
 get_total_stats updates the player's current power when needed.
 fight_input gets the players action for fight_monster_loop.
+get_name gets the player's name it is under a certain length.
 """
 
 #gamefunctions.py
@@ -164,6 +165,21 @@ def fight_input(state, monster):
     print("1) Fight \n2) Use Bomb \n3) Run away")
     #gets and returns the player's action
     return input()
+
+def get_name():
+    """
+    Gets the player's name and ensures that it is under a certain length.
+
+    Parameters:
+        None
+
+    Returns:
+        name (str): The player's name (<20 characters)
+    """
+    name = input("Please enter your name:\n")
+    while len(name) > 20:
+        name = input("Name is too long, please enter a name less than 20 characters: ")
+    return name
 
 def test_function():
     """

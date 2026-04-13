@@ -11,19 +11,50 @@ rest_at_inn allows the player to spend gold to refill their HP.
 #Xander Bergman
 #3/21/206
 
-#gets the functions from gamefunctions for later use
-import gamefunctions
+import gamefunctions #gets the functions from gamefunctions for later use
+import json #for save data management
+import os #for checking status of save file
 
-#defines a number of variables for later use
-#stores user's inventory, initially empty
-state = {
+#check for savedata in the current working directory
+#if none is found, initializes state dict. with default values
+if "savedata.json" not in os.listdir():
+    name = gamefunctions.get_name()
+    state = {
+    "player_name": name,
     "player_max_health": 100,
     "player_health": 100,
     "player_gold": 1000,
     "base_power": 10,
     "current_power": 10,
     "inventory": []
-}
+    }
+
+#if savedata is found, asks user if they want to load save or start a new game
+else:
+    print("Would you like to continue from previous save?")
+    print("1) Continue \n2) New Game")
+    while True:
+        user_action = input()
+        #if user chooses to continue, loads state dict. from save file
+        if user_action == "1":
+            with open("savedata.json", "r") as savedata:
+                state = json.load(savedata)
+            break
+        #if user chooses new game, initilizes state dict. with default values
+        elif user_action == "2":
+            name = gamefunctions.get_name()
+            state = {
+            "player_name": name,
+            "player_max_health": 100,
+            "player_health": 100,
+            "player_gold": 1000,
+            "base_power": 10,
+            "current_power": 10,
+            "inventory": []
+            }
+            break
+        else:
+            print("Unrecognized command.")
 
 user_action = "0"
 
@@ -215,13 +246,14 @@ def rest_at_inn():
             print("\nUnrecognized command")
     print("\nYou leave the inn.")
 
+gamefunctions.print_welcome(state["player_name"], 20)
 #main gameplay loop that runs until the user choses the option to quit
-while user_action != "5": 
+while True: 
     #prints give the player info and shows their options
     print(f"\nYou are currently in town.")
     print(f"Current HP: {state['player_health']}, Current Gold: {state['player_gold']}")
     print("What would you like to do?\n")
-    print("1) Leave town (fight monster) \n2) Visit shop (purchase items) \n3) Equip Items \n4) Rest at inn \n5) Quit")
+    print("1) Leave town (fight monster) \n2) Visit shop (purchase items) \n3) Equip Items \n4) Rest at inn \n5) Save & Quit")
     user_action = input()
     if user_action == "1":
         monster = gamefunctions.new_random_monster()
@@ -233,9 +265,15 @@ while user_action != "5":
         equip_items()
     elif user_action == "4":
         rest_at_inn()
-    elif user_action != "5":
+    elif user_action == "5":
+        #on exit, export the current state dictionary to save file
+        with open("savedata.json", "w") as savedata:
+            json.dump(state, savedata)
+        print("Game saved!")
+        break
+    else:
         #if user command is invalid, sends a message then repeats the loop
-        print("Unrecognized command.\n")
+        print("Unrecognized command.")
         
 #when main loop is terminated, prints a goodbye message
 print("Thanks for playing!")
