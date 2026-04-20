@@ -1,10 +1,5 @@
 """A simple game that allows the player to fight monsters.
 
-fight_monster_loop creats a loop that lets the player fight a monster.
-buy_stuff uses the print_shop_menu and purchase_item functions
-from gamefunctions.py to allow the player to see and purchase 2
-different items.
-rest_at_inn allows the player to spend gold to refill their HP.
 """
 
 #game.py
