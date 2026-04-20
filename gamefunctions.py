@@ -7,6 +7,14 @@ print_shop_menu prints a sign displaying two items and their prices.
 get_total_stats updates the player's current power when needed.
 fight_input gets the players action for fight_monster_loop.
 get_name gets the player's name it is under a certain length.
+fight_monster_loop creats a loop that lets the player fight a monster.
+buy_stuff uses the print_shop_menu and purchase_item functions
+from gamefunctions.py to allow the player to see and purchase 2
+different items.
+rest_at_inn allows the player to spend gold to refill their HP.
+move_player updates the player's position in map_state in place.
+respawn_monster moves the monster to a new random location on the map.
+explore_map continually draws a map using the game state as reference.
 """
 
 #gamefunctions.py
@@ -14,7 +22,7 @@ get_name gets the player's name it is under a certain length.
 #2/28/2026
 
 #random numbers are required for monster generation so random is imported
-import random
+import random, pygame, time
 
 def purchase_item(itemPrice,startingMoney,quantityToPurchase=1):
     """
@@ -180,6 +188,328 @@ def get_name():
     while len(name) > 20:
         name = input("Name is too long, please enter a name less than 20 characters: ")
     return name
+
+def fight_monster_loop(state, monster):
+    """Creats a loop where the player fights a monster.
+
+    Parameters:
+        state (dict): The gamestate dictionary
+        monster (dict): Generated from gamefunctions.new_random_monster
+
+    Retruns:
+        state (dict): Updates the gamestate dictionary
+    """
+    print(f"\nYou encounter a wild {monster["name"]}!")
+    #while loops ends when either the player or monster dies
+    while state["player_health"] > 0 and monster["health"] > 0:
+        get_total_stats(state)
+        fight_action = fight_input(state, monster)
+        if fight_action == "1":
+            #check for an equipped weapon
+            for item in state["inventory"]:
+                #if found, reduce its durability
+                if item.get("equipped") and item.get("type") == "weapon":
+                    item["durability"] -= 1
+                    #if it breaks, remove it and reset player power
+                    if item["durability"] <= 0:
+                        print(f"Your {item["name"]} broke!")
+                        state["inventory"].remove(item)
+                        state["current_power"] = state["base_power"]
+                    else:
+                        print(f"Weapon durability: {item["durability"]}")
+                    break
+            monster["health"] -= state["current_power"]
+            #if monster dies, it doesn't hurt the player
+            if monster["health"] > 0:
+                state["player_health"] -= monster["power"]
+        elif fight_action == "2":
+            #bomb_found defaults to false, then check to see if player has one
+            bomb_found = False
+            for item in state["inventory"]:
+                #if they do, immediately defeat the monster and remove bomb from inventory
+                if item["name"] == "bomb":
+                    print("\nYou threw a bomb!")
+                    monster["health"] = 0
+                    state["inventory"].remove(item)
+                    bomb_found = True
+                    break
+            if not bomb_found:
+                    print("\nYou don't have a bomb to throw!")
+        elif fight_action == "3":
+            print("\nYou ran away!")
+            return state
+            break #exits the fight loop and returns the player to the main loop
+        else:
+            #if user command is invalid, sends a message then repeats the loop
+            print("Unrecognized command.\n")
+    #if-else statements check the two cases that cause the loop to end
+    if state["player_health"] <= 0:
+        state["player_health"]= 0 #prevents player_health from appearing as negative
+        print("You passed out...")
+        return state
+    elif monster["health"] <= 0:
+        print("You defeated the monster!")
+        state["player_gold"] += monster["money"]
+        return state
+
+def buy_stuff(state):
+    """
+    Uses functions in gamefunctions to display and allow the player to purchase items.
+
+    Parameters:
+        state (dict): The gamestate dictionary
+        
+    Returns:
+        state (dict): Updates the gamestate dictionary
+    """
+    shop_action = "0"
+    while shop_action != "3": #keeps the player in the store until they choose to leave
+        #prints a sign displaying item options to the player
+        print()
+        print_shop_menu("Sword", 100, "Bomb", 50)
+        print(f"\nYou currently have {state["player_gold"]} gold.")
+        print("What would you like to buy?\n")
+        print("1) Sword \n2) Bomb \n3) Nothing (Leave) ")
+        shop_action = input()
+        #if-else statments check which item the player purchased, then subtract its cost from their gold
+        if shop_action == "1":
+            num, state["player_gold"] = purchase_item(100, state["player_gold"])
+            if num > 0:
+                #add a sword dictionary to inventory
+                state["inventory"].append({
+                    "name": "sword", 
+                    "type": "weapon", 
+                    "power_bonus": 5,
+                    "durability": 10,
+                    "equipped": False
+                })
+                print(f"\nYou purchased a sword! You have {state["player_gold"]} gold left.")
+            else:
+                print("\nNot enough gold!")
+        elif shop_action == "2":
+            num, state["player_gold"] = purchase_item(50, state["player_gold"])
+            if num > 0:
+                #add a bomb dictionary to inventory
+                state["inventory"].append({"name": "bomb", "type": "consumable"})
+                print(f"\nYou purchased a bomb! You have {state["player_gold"]} gold left.")
+            else:
+                print("\nNot enough gold!")
+        elif shop_action == "3":
+            print("\nYou left the store.")
+            return state
+            #exits the store loop and returns the player to the main loop
+        else:
+            print("\nUnrecognised command.")
+
+def equip_items(state):
+    """
+    Runs a loop that allows the player to equip/unequip items.
+    Filters by type so the user only sees relevant items at one time.
+
+    Parameters:
+        state (dict): The gamestate dictionary
+        
+    Returns:
+        state (dict): Updates the gamestate dictionary
+    """
+    #outer 'main' equip loop
+    #runs indefinately until player choses '3' to leave
+    while True:
+        print("\nWhat type of item would you like to equip?")
+        print("1) Weapons \n2) Armor \n3) Nothing") 
+        category = input()
+        target_type = ""
+        if category == "1":
+            target_type = "weapon"
+        elif category == "2":
+            target_type = "armor"
+        elif category == "3":
+            return state
+            break
+        else:
+            print("\nInvalid category.")
+            continue
+        #inner loop for the specific category
+        while True:
+            #create a list of only items that match the chosen type
+            relevant_items = [item for item in state["inventory"] if item.get("type") == target_type]
+            print(f"\nYour {target_type.capitalize()}s:")
+            if not relevant_items:
+                print(f"\nYou don't have any {target_type}s!")
+                break #go back to the category selection
+            #display only the relevant items
+            for i, item in enumerate(relevant_items):
+                status = "[Equipped]" if item.get("equipped") else "[ ]"
+                print(f"{i+1}) {status} {item['name']}")
+            print(f"{len(relevant_items) + 1}) Back to Categories")
+            choice = input(f"Select a {target_type} to equip, or go back:")
+            #requires conversion of input into int for list indexing
+            if choice.isdigit():
+                idx = int(choice) - 1
+                #if they chose an item from the list
+                if 0 <= idx < len(relevant_items):
+                    selected_item = relevant_items[idx]
+                    #can only equip one weapon
+                    if not selected_item["equipped"]:
+                        #unequip all other items of this type first
+                        for item in relevant_items:
+                            item["equipped"] = False
+                        selected_item["equipped"] = True
+                        print(f"You equipped the {selected_item['name']}!")
+                    else:
+                        selected_item["equipped"] = False
+                        print(f"You unequipped the {selected_item['name']}.")
+                #if they chose the "Back" option
+                elif idx == len(relevant_items):
+                    break 
+                else:
+                    print("Unrecognized command.")
+            else:
+                print("Please enter a number.")
+
+def rest_at_inn(state):
+    """
+    Allows the player to pay gold to reset their health to their max HP.
+    
+    Parameters:
+        state (dict): The gamestate dictionary
+        
+    Returns:
+        state (dict): Updates the gamestate dictionary
+    """
+    #same logic as other loops
+    print("It cost 10 gold to rest and refill your HP.")
+    print(f"You currently have {state["player_health"]}/{state["player_max_health"]} HP and {state["player_gold"]} gold.")
+    print("Would you like to rest?")
+    print("1) Yes \n2) No")
+    #defines inn_action so it can be used as loop variable
+    inn_action = "0"
+    while inn_action != "2":
+        inn_action = input()
+        if inn_action == "1":
+                #checks to see if player can afford to stay
+                if state["player_gold"] < 10:
+                    print("\nYou don't have enough money to stay here. The innkeeper kicks you out.")
+                    return state #return to main loop since player won't have any other actions here
+                else:
+                    state["player_gold"] -= 10
+                    state["player_health"] = state["player_max_health"]
+                    print("\nYou awake feeling refreshed!")
+                    return state
+        elif inn_action != "2":
+            print("\nUnrecognized command")
+    print("\nYou leave the inn.")
+
+def move_player(state, direction):
+    """
+    Updates the player's position in map_state in place.
+    
+    Parameters:
+        direction (str): Either "up", "down", "left", or "right"
+    Retruns:
+        A string saying what happened
+    """
+    map_state = state["map_state"]
+    pos = map_state["player_pos"]
+
+    #create variables for the potential movement location
+    new_x, new_y = pos["x"], pos["y"]
+    #try to move the player a direction based on parameters
+    if direction == "up":    new_y -= 1
+    elif direction == "down":  new_y += 1
+    elif direction == "left":  new_x -= 1
+    elif direction == "right": new_x += 1
+    #checks that the new position wouldn't be outside the boundry
+    #skips updating the position if it would
+    if (0 <= new_x < 10) and (0 <= new_y < 10):
+        pos["x"] = new_x
+        pos["y"] = new_y
+
+    #check for encounters at the player's position
+    if pos == map_state["monster_pos"]:
+        return "monster_encounter"
+    if pos == map_state["town_pos"]:
+        return "returned_to_town"
+    return "moved"
+
+def respawn_monster(state):
+    """
+    Moves the monster to a new random location on the map.
+
+    Parameters:
+        state (dict): The gamestate dictionary
+    Returns:
+        None
+    """
+    map_data = state["map_state"]
+    while True:
+        #randomly generates a position
+        new_pos = {"x": random.randint(0, 9), "y": random.randint(0,9)}
+        #makes sure that the new monster position isn't the same as the town or player
+        #if it is, it rolls a new random location until it is in a different spot
+        if new_pos != map_data["town_pos"] and new_pos != map_data["player_pos"]:
+            map_data["monster_pos"] = new_pos
+            break
+
+def explore_map(state):
+    """
+    Continually draws a map using the game state as reference.
+    Runs until the player encounters something (monster/town).
+
+    Parameters:
+        state (dict): The gamestate dictionary
+    Returns:
+        A string containing what the player encountered.
+    """
+    #variables for setup that make the code easier to read
+    colors = {"black": (0, 0, 0), "green": (0,200,0), "white": (250,250,250), "red": (200,0,0)}
+    grid_size = 32 #Set the size of the grid block
+    pygame.init()
+    SCREEN = pygame.display.set_mode((320, 320))
+    pygame.display.set_caption("World Map")
+    map_state = state["map_state"]
+    while True:
+        #makes sure that the player doesn't encounter something if they didn't move
+        direction = None
+        #get any user inputs
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                return "quit"
+            #look for keypresses
+            if event.type == pygame.KEYDOWN:
+                #if key is an arrow key, set direction with which arrow key was pressed
+                if event.key == pygame.K_UP: direction = "up"
+                elif event.key == pygame.K_DOWN:  direction = "down"
+                elif event.key == pygame.K_LEFT:  direction = "left"
+                elif event.key == pygame.K_RIGHT: direction = "right"
+            if direction:
+                #use move_player to update player_pos and check for encounters
+                result = move_player(state, direction)
+                if result == "monster_encounter":
+                    pygame.display.quit()
+                    return "monster"
+                elif result == "returned_to_town":
+                    pygame.display.quit()
+                    return "town"
+        #fill screen with black
+        SCREEN.fill(colors["black"])
+        #draw grid outline
+        for x in range(10):
+            for y in range(10):
+                rect = pygame.Rect(x* grid_size , y * grid_size, grid_size, grid_size)
+                pygame.draw.rect(SCREEN, colors["green"], rect, 1)
+        #draw the town based on its position in the game state
+        tx, ty = map_state["town_pos"]["x"], map_state["town_pos"]["y"]
+        pygame.draw.circle(SCREEN, colors["green"], (tx *32 + 16, ty * 32 + 16), 15)
+        #draw the monster based on its position in the game state
+        mx, my = map_state["monster_pos"]["x"], map_state["monster_pos"]["y"]
+        pygame.draw.circle(SCREEN, colors["red"], (mx * 32 + 16, my * 32 +16), 15)
+        #draw the player based on their position in the game state
+        px, py = map_state["player_pos"]["x"], map_state["player_pos"]["y"]
+        pygame.draw.rect(SCREEN, colors["white"], (px*32+11, py*32+9, 10, 14))
+        #update the screen
+        pygame.display.flip()
 
 def test_function():
     """
