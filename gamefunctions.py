@@ -23,6 +23,7 @@ explore_map continually draws a map using the game state as reference.
 
 #random numbers are required for monster generation so random is imported
 import random, pygame, time
+from WanderingMonster import WanderingMonster
 
 def purchase_item(itemPrice,startingMoney,quantityToPurchase=1):
     """
@@ -162,13 +163,13 @@ def fight_input(state, monster):
 
     Parameters:
         state (dict): The gamestate dictionary
-        monster (dict): Generated from gamefunctions.new_random_monster
+        monster (obj): A WanderingMonster Object
 
     Returns:
         action (str): The player's selected action.
     """
     #prints display information and options to the player
-    print(f"\nYour HP: {state["player_health"]}, {monster["name"]} HP: {monster["health"]}")
+    print(f"\nYour HP: {state["player_health"]}, {monster.mon_type} HP: {monster.health}")
     print("What would you like to do?\n")
     print("1) Fight \n2) Use Bomb \n3) Run away")
     #gets and returns the player's action
@@ -194,14 +195,14 @@ def fight_monster_loop(state, monster):
 
     Parameters:
         state (dict): The gamestate dictionary
-        monster (dict): Generated from gamefunctions.new_random_monster
+        monster (obj): A WanderingMonster Object
 
     Retruns:
-        state (dict): Updates the gamestate dictionary
+        A string describing what happened
     """
-    print(f"\nYou encounter a wild {monster["name"]}!")
+    print(f"\nYou encounter a wild {monster.mon_type}!")
     #while loops ends when either the player or monster dies
-    while state["player_health"] > 0 and monster["health"] > 0:
+    while state["player_health"] > 0 and monster.health > 0:
         get_total_stats(state)
         fight_action = fight_input(state, monster)
         if fight_action == "1":
@@ -218,10 +219,10 @@ def fight_monster_loop(state, monster):
                     else:
                         print(f"Weapon durability: {item["durability"]}")
                     break
-            monster["health"] -= state["current_power"]
+            monster.health -= state["current_power"]
             #if monster dies, it doesn't hurt the player
-            if monster["health"] > 0:
-                state["player_health"] -= monster["power"]
+            if monster.health > 0:
+                state["player_health"] -= monster.power
         elif fight_action == "2":
             #bomb_found defaults to false, then check to see if player has one
             bomb_found = False
@@ -229,7 +230,7 @@ def fight_monster_loop(state, monster):
                 #if they do, immediately defeat the monster and remove bomb from inventory
                 if item["name"] == "bomb":
                     print("\nYou threw a bomb!")
-                    monster["health"] = 0
+                    monster.health = 0
                     state["inventory"].remove(item)
                     bomb_found = True
                     break
@@ -237,8 +238,7 @@ def fight_monster_loop(state, monster):
                     print("\nYou don't have a bomb to throw!")
         elif fight_action == "3":
             print("\nYou ran away!")
-            return state
-            break #exits the fight loop and returns the player to the main loop
+            break
         else:
             #if user command is invalid, sends a message then repeats the loop
             print("Unrecognized command.\n")
@@ -246,11 +246,11 @@ def fight_monster_loop(state, monster):
     if state["player_health"] <= 0:
         state["player_health"]= 0 #prevents player_health from appearing as negative
         print("You passed out...")
-        return state
-    elif monster["health"] <= 0:
+        return "player_fainted"
+    elif monster.health <= 0:
         print("You defeated the monster!")
-        state["player_gold"] += monster["money"]
-        return state
+        state["player_gold"] += monster.gold
+        return "monster_defeated"
 
 def buy_stuff(state):
     """
@@ -425,11 +425,6 @@ def move_player(state, direction):
         pos["x"] = new_x
         pos["y"] = new_y
 
-    #check for encounters at the player's position
-    if pos == map_state["monster_pos"]:
-        return "monster_encounter"
-    if pos == map_state["town_pos"]:
-        return "returned_to_town"
     return "moved"
 
 def respawn_monster(state):
@@ -459,7 +454,8 @@ def explore_map(state):
     Parameters:
         state (dict): The gamestate dictionary
     Returns:
-        A string containing what the player encountered.
+        A string containing what the player encountered
+        or the WanderingMonster object the player encountered.
     """
     #variables for setup that make the code easier to read
     colors = {"black": (0, 0, 0), "green": (0,200,0), "white": (250,250,250), "red": (200,0,0)}
@@ -484,14 +480,25 @@ def explore_map(state):
                 elif event.key == pygame.K_LEFT:  direction = "left"
                 elif event.key == pygame.K_RIGHT: direction = "right"
             if direction:
-                #use move_player to update player_pos and check for encounters
-                result = move_player(state, direction)
-                if result == "monster_encounter":
-                    pygame.display.quit()
-                    return "monster"
-                elif result == "returned_to_town":
+                #use move_player to update player_pos
+                move_player(state, direction)
+                player_x, player_y = map_state["player_pos"]["x"], map_state["player_pos"]["y"]
+                town_x, town_y = map_state["town_pos"]["x"], map_state["town_pos"]["y"]
+                #check if player collided with something
+                if (player_x, player_y) == (town_x, town_y):
                     pygame.display.quit()
                     return "town"
+                for monster in state["monsters"]:
+                    if (player_x, player_y) == (monster.x, monster.y):
+                        pygame.display.quit()
+                        return monster
+                #attempt to move each monster to unoccupied square
+                forbidden = [(town_x, town_y)]
+                for monster in state["monsters"]:
+                    other_monsters = [(mon.x, mon.y) for mon in state["monsters"] if mon != monster]
+                    occupied = [(player_x, player_y), other_monsters]
+                    monster.move(occupied, forbidden, 10, 10)
+                    
         #fill screen with black
         SCREEN.fill(colors["black"])
         #draw grid outline
@@ -500,14 +507,14 @@ def explore_map(state):
                 rect = pygame.Rect(x* grid_size , y * grid_size, grid_size, grid_size)
                 pygame.draw.rect(SCREEN, colors["green"], rect, 1)
         #draw the town based on its position in the game state
-        tx, ty = map_state["town_pos"]["x"], map_state["town_pos"]["y"]
-        pygame.draw.circle(SCREEN, colors["green"], (tx *32 + 16, ty * 32 + 16), 15)
-        #draw the monster based on its position in the game state
-        mx, my = map_state["monster_pos"]["x"], map_state["monster_pos"]["y"]
-        pygame.draw.circle(SCREEN, colors["red"], (mx * 32 + 16, my * 32 +16), 15)
+        town_x, town_y = map_state["town_pos"]["x"], map_state["town_pos"]["y"]
+        pygame.draw.circle(SCREEN, colors["green"], (town_x *32 + 16, town_y * 32 + 16), 15)
+        #draw all monsters based on their positions in the game state
+        for monster in state["monsters"]:
+            pygame.draw.circle(SCREEN, monster.color, (monster.x * 32 + 16, monster.y * 32 +16), 15)
         #draw the player based on their position in the game state
-        px, py = map_state["player_pos"]["x"], map_state["player_pos"]["y"]
-        pygame.draw.rect(SCREEN, colors["white"], (px*32+11, py*32+9, 10, 14))
+        player_x, player_y = map_state["player_pos"]["x"], map_state["player_pos"]["y"]
+        pygame.draw.rect(SCREEN, colors["white"], (player_x*32+11, player_y*32+9, 10, 14))
         #update the screen
         pygame.display.flip()
 
