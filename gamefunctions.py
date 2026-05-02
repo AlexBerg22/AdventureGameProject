@@ -1,19 +1,18 @@
-"""Defines 4 different game functions for a several purposes.
+"""Defines several different game functions for a various purposes.
 
 purchase_item allows the user to buy items.
 new_random_monster randomly generates a monster with unique stats.
 print_welcome prints a centered welcome message for the user.
 print_shop_menu prints a sign displaying two items and their prices.
-get_total_stats updates the player's current power when needed.
+get_total_stats updates the player's current power/defense when needed.
 fight_input gets the players action for fight_monster_loop.
 get_name gets the player's name it is under a certain length.
 fight_monster_loop creats a loop that lets the player fight a monster.
-buy_stuff uses the print_shop_menu and purchase_item functions
-from gamefunctions.py to allow the player to see and purchase 2
-different items.
+buy_stuff & buy_stuff2 uses the print_shop_menu and purchase_item functions
+to allow the player to see and purchase different items.
+equip_items allows the player to equip weapons and armor.
 rest_at_inn allows the player to spend gold to refill their HP.
 move_player updates the player's position in map_state in place.
-respawn_monster moves the monster to a new random location on the map.
 explore_map continually draws a map using the game state as reference.
 """
 
@@ -72,8 +71,8 @@ def new_random_monster():
         "name": "Goblin",
         "description": ("A common neusance. It seems to have ammased some wealth from stealing. "
         "Perhaps you could \"liberate\" this wealth?"),
-        "health": random.randint(5,15),
-        "power": random.randint(2,5),
+        "health": random.randint(10,25),
+        "power": random.randint(2,7),
         "money": random.randint(25, 50),
         }
     elif rand_monster_type == 3:
@@ -91,15 +90,15 @@ def new_random_monster():
         "description": ("The better half of D&D approaches! "
         "Ready your weapon and claim the dragon\'s hoard!"),
         "health": random.randint(100,150),
-        "power": random.randint(25,30),
+        "power": random.randint(25,35),
         "money": random.randint(200,500),
         }
     elif rand_monster_type == 5  or rand_monster_type == 6:
        return {
         "name": "Troll",
         "description": "Someone's trying to stir up trouble online! Get them!",
-        "health": random.randint(10,20),
-        "power": random.randint(5,10),
+        "health": random.randint(20,40),
+        "power": random.randint(5,15),
         "money": random.randint(0,50),
         }
 
@@ -328,7 +327,7 @@ def buy_stuff(state):
         if shop_action == "1":
             num, state["player_gold"] = purchase_item(75, state["player_gold"])
             if num > 0:
-                #add a sword dictionary to inventory
+                #add a potion dictionary to inventory
                 playsound("sounds/purchase.mp3", block=False)
                 state["inventory"].append({"name": "potion", "type": "consumable"})
                 print(f"\nYou purchased a sword! You have {state["player_gold"]} gold left.")
@@ -392,7 +391,7 @@ def buy_stuff2(state):
         elif shop_action == "2":
             num, state["player_gold"] = purchase_item(200, state["player_gold"])
             if num > 0:
-                #add a bomb dictionary to inventory
+                #add a shield dictionary to inventory
                 playsound("sounds/purchase.mp3", block=False)
                 state["inventory"].append({
                     "name": "shield", 
@@ -491,7 +490,7 @@ def rest_at_inn(state):
         state (dict): Updates the gamestate dictionary
     """
     #same logic as other loops
-    print("\nIt costs 20 gold to rest and refill your HP.")
+    print("\nIt costs 50 gold to rest and refill your HP.")
     print(f"You currently have {state["player_health"]}/{state["player_max_health"]} HP and {state["player_gold"]} gold.")
     print("Would you like to rest?\n")
     print("1) Yes \n2) No")
@@ -501,11 +500,11 @@ def rest_at_inn(state):
         inn_action = input()
         if inn_action == "1":
                 #checks to see if player can afford to stay
-                if state["player_gold"] < 20:
+                if state["player_gold"] < 50:
                     print("\nYou don't have enough money to stay here. The innkeeper kicks you out.")
                     return state #return to main loop since player won't have any other actions here
                 else:
-                    state["player_gold"] -= 20
+                    state["player_gold"] -= 50
                     state["player_health"] = state["player_max_health"]
                     playsound("sounds/hp-refill.mp3", block=False)
                     print("\nYou awake feeling refreshed!")
@@ -545,25 +544,6 @@ def move_player(state, direction):
         pos["y"] = new_y
     playsound("sounds/walk-sound-quiet.mp3", block=False)
     return "moved"
-
-def respawn_monster(state):
-    """
-    Moves the monster to a new random location on the map.
-
-    Parameters:
-        state (dict): The gamestate dictionary
-    Returns:
-        None
-    """
-    map_data = state["map_state"]
-    while True:
-        #randomly generates a position
-        new_pos = {"x": random.randint(0, 9), "y": random.randint(0,9)}
-        #makes sure that the new monster position isn't the same as the town or player
-        #if it is, it rolls a new random location until it is in a different spot
-        if new_pos != map_data["town_pos"] and new_pos != map_data["player_pos"]:
-            map_data["monster_pos"] = new_pos
-            break
 
 def explore_map(state):
     """

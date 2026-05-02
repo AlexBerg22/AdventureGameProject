@@ -139,6 +139,7 @@ while True:
         state = gamefunctions.buy_stuff(state)
     elif user_action == "3":
         main_music.stop()
+        #runs the blacksmith loop
         state = gamefunctions.buy_stuff2(state)
     elif user_action == "4":
         #runs the equip items loop
