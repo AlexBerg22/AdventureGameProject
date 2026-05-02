@@ -213,6 +213,8 @@ def fight_monster_loop(state, monster):
         get_total_stats(state)
         fight_action = fight_input(state, monster)
         if fight_action == "1":
+            playsound("sounds/battle-hit.mp3", block=False)
+            monster.health -= state["current_power"]
             #check for an equipped weapon
             for item in state["inventory"]:
                 #if found, reduce its durability
@@ -227,8 +229,6 @@ def fight_monster_loop(state, monster):
                     else:
                         print(f"Weapon durability: {item["durability"]}")
                     break
-            playsound("sounds/battle-hit.mp3", block=False)
-            monster.health -= state["current_power"]
             #if monster dies, it doesn't hurt the player
             if monster.health > 0:
                 if monster.power - state["current_defense"] < 0:

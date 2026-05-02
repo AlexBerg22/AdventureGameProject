@@ -29,7 +29,7 @@ if "adventure_savedata.json" not in os.listdir():
     name = gamefunctions.get_name()
     player_x, player_y = 0, 0
     town_x, town_y = 0, 0
-    initial_monster = WanderingMonster.random_spawn([], [(player_x, player_y), (town_x, town_y)], 10, 10)
+    initial_monster = WanderingMonster.random_spawn([(player_x, player_y)], [(town_x, town_y),(5,5),(3,7),(7,1),(4,3),(2,2),(8,6),(6,9)], 10, 10)
     state = {
     "player_name": name,
     "player_max_health": 100,
@@ -43,7 +43,7 @@ if "adventure_savedata.json" not in os.listdir():
     "map_state": {
         "player_pos": {"x": 0, "y": 0},
         "town_pos": {"x": 0, "y": 0},
-        "trees": [{"x": 5, "y": 5},{"x": 3, "y": 7},{"x": 7, "y": 2}, {"x": 4, "y": 3}, {"x": 2, "y": 2}]
+        "trees": [{"x": 5, "y": 5},{"x": 3, "y": 7},{"x": 7, "y": 1}, {"x": 4, "y": 3}, {"x": 2, "y": 2}, {"x": 8, "y": 6}, {"x": 6, "y": 9}]
         },
     "monsters": [initial_monster]
     }
@@ -65,7 +65,7 @@ else:
             name = gamefunctions.get_name()
             player_x, player_y = 0, 0
             town_x, town_y = 0, 0
-            initial_monster = WanderingMonster.random_spawn([], [(player_x, player_y), (town_x, town_y)], 10, 10)
+            initial_monster = WanderingMonster.random_spawn([(player_x, player_y)], [(town_x, town_y),(5,5),(3,7),(7,1),(4,3),(2,2),(8,6),(6,9)], 10, 10)
             state = {
                 "player_name": name,
                 "player_max_health": 100,
@@ -79,7 +79,7 @@ else:
                 "map_state": {
                     "player_pos": {"x": 0, "y": 0},
                     "town_pos": {"x": 0, "y": 0},
-                    "trees": [{"x": 5, "y": 5},{"x": 3, "y": 7},{"x": 7, "y": 2}, {"x": 4, "y": 3}, {"x": 2, "y": 2}]
+                    "trees": [{"x": 5, "y": 5},{"x": 3, "y": 7},{"x": 7, "y": 1}, {"x": 4, "y": 3}, {"x": 2, "y": 2},{"x": 8, "y": 6}, {"x": 6, "y": 9}]
                     },
                 "monsters": [initial_monster]
                 }
