@@ -64,8 +64,8 @@ def new_random_monster():
             money (int)
     """
     #randomly chooses an int 1 - 4, each int corresponds to a monster type 
-    rand_monster_type = random.randint(1,4)
-    if rand_monster_type == 1:
+    rand_monster_type = random.randint(1,6)
+    if rand_monster_type == 1 or rand_monster_type == 2:
      #unique 'random.randint's are used after monster type is chosen
      #to generate its stats within a given range
      return {
@@ -74,27 +74,27 @@ def new_random_monster():
         "Perhaps you could \"liberate\" this wealth?"),
         "health": random.randint(5,15),
         "power": random.randint(2,5),
-        "money": random.randint(25, 100),
+        "money": random.randint(25, 50),
         }
-    elif rand_monster_type == 2:
+    elif rand_monster_type == 3:
       return {
         "name": "Beholder",
         "description": ("They say that beauty is in its eye, but you really don\'t see any. "
         "Behold it while you still can or draw your weapon and fight!"),
         "health": random.randint(75,125),
         "power": random.randint(20,30),
-        "money": random.randint(500, 750),
+        "money": random.randint(100, 300),
         }
-    elif rand_monster_type == 3:
+    elif rand_monster_type == 4:
       return {
         "name": "Ancient Dragon",
         "description": ("The better half of D&D approaches! "
         "Ready your weapon and claim the dragon\'s hoard!"),
         "health": random.randint(100,150),
         "power": random.randint(25,30),
-        "money": random.randint(800,1200),
+        "money": random.randint(200,500),
         }
-    elif rand_monster_type == 4:
+    elif rand_monster_type == 5  or rand_monster_type == 6:
        return {
         "name": "Troll",
         "description": "Someone's trying to stir up trouble online! Get them!",
@@ -149,14 +149,17 @@ def get_total_stats(state):
     Returns:
         None
     """
-    #power_bonus defaults to 0, then checks for equiped weapon
+    #bonuses default to 0, then checks for equiped items
     power_bonus = 0
+    defense_bonus = 0
     for item in state["inventory"]:
-        #if there is an equipped weapon, add its power to base power
+        #if there is an equipped item, add its bonus to base values
         if item.get("equipped"):
             power_bonus += item.get("power_bonus", 0)
+            defense_bonus += item.get("defense_bonus", 0)
     #update state dict with new calculated power
     state["current_power"] = state["base_power"] + power_bonus
+    state["current_defense"] = state["base_defense"] + defense_bonus
 
 def fight_input(state, monster):
     """
@@ -172,7 +175,7 @@ def fight_input(state, monster):
     #prints display information and options to the player
     print(f"\nYour HP: {state["player_health"]}, {monster.mon_type} HP: {monster.health}")
     print("What would you like to do?\n")
-    print("1) Fight \n2) Use Bomb \n3) Run away")
+    print("1) Fight \n2) Use bomb \n3) Use healing potion \n4) Run away")
     #gets and returns the player's action
     return input()
 
@@ -228,7 +231,23 @@ def fight_monster_loop(state, monster):
             monster.health -= state["current_power"]
             #if monster dies, it doesn't hurt the player
             if monster.health > 0:
-                state["player_health"] -= monster.power
+                if monster.power - state["current_defense"] < 0:
+                     state["player_health"] = state["player_health"]
+                else:
+                    state["player_health"] -= monster.power - state["current_defense"]
+                for item in state["inventory"]:
+                    #if found, reduce its durability
+                    if item.get("equipped") and item.get("type") == "armor":
+                        item["durability"] -= 5
+                        #if it breaks, remove it and reset player defense
+                        if item["durability"] <= 0:
+                            print(f"Your {item["name"]} broke!")
+                            playsound("sounds/break.mp3")
+                            state["inventory"].remove(item)
+                            state["current_defense"] = state["base_defense"]
+                        else:
+                            print(f"Armor durability: {item["durability"]}")
+                        break
         elif fight_action == "2":
             #bomb_found defaults to false, then check to see if player has one
             bomb_found = False
@@ -245,6 +264,23 @@ def fight_monster_loop(state, monster):
                     print("\nYou don't have a bomb to throw!")
                     playsound("sounds/battle-bomb-fail.mp3", block=False)
         elif fight_action == "3":
+            #potion_found defaults to false, then check to see if player has one
+            potion_found = False
+            for item in state["inventory"]:
+                #if they do, immediately defeat the monster and remove bomb from inventory
+                if item["name"] == "potion":
+                    print("\nYou drank a healing potion!")
+                    playsound("sounds/hp-refill.mp3")
+                    state["player_health"] += 50
+                    if state["player_health"] > state["player_max_health"]:
+                        state["player_health"] = state["player_max_health"]
+                    state["inventory"].remove(item)
+                    potion_found = True
+                    break
+            if not potion_found:
+                    print("\nYou don't have any healing potions!")
+                    playsound("sounds/battle-bomb-fail.mp3", block=False)
+        elif fight_action == "4":
             battle_music.stop()
             print("\nYou ran away!")
             playsound("sounds/battle-flee.mp3")
@@ -254,7 +290,7 @@ def fight_monster_loop(state, monster):
             print("Unrecognized command.\n")
     #if-else statements check the two cases that cause the loop to end
     if state["player_health"] <= 0:
-        state["player_health"]= 0 #prevents player_health from appearing as negative
+        state["player_health"] = 1 #prevents player_health from appearing as negative or 0
         battle_music.stop()
         print("You passed out...")
         playsound("sounds/player-dies.mp3")
@@ -283,10 +319,59 @@ def buy_stuff(state):
             shop_music = playsound("sounds/shop-music.mp3", block=False)
         #prints a sign displaying item options to the player
         print()
-        print_shop_menu("Sword", 100, "Bomb", 50)
+        print_shop_menu("Healing Pot.", 75, "Bomb", 100)
         print(f"\nYou currently have {state["player_gold"]} gold.")
         print("What would you like to buy?\n")
-        print("1) Sword \n2) Bomb \n3) Nothing (Leave) ")
+        print("1) Healing Potion \n2) Bomb \n3) Nothing (Leave) ")
+        shop_action = input()
+        #if-else statments check which item the player purchased, then subtract its cost from their gold
+        if shop_action == "1":
+            num, state["player_gold"] = purchase_item(75, state["player_gold"])
+            if num > 0:
+                #add a sword dictionary to inventory
+                playsound("sounds/purchase.mp3", block=False)
+                state["inventory"].append({"name": "potion", "type": "consumable"})
+                print(f"\nYou purchased a sword! You have {state["player_gold"]} gold left.")
+            else:
+                print("\nNot enough gold!")
+        elif shop_action == "2":
+            num, state["player_gold"] = purchase_item(100, state["player_gold"])
+            if num > 0:
+                #add a bomb dictionary to inventory
+                playsound("sounds/purchase.mp3", block=False)
+                state["inventory"].append({"name": "bomb", "type": "consumable"})
+                print(f"\nYou purchased a bomb! You have {state["player_gold"]} gold left.")
+            else:
+                print("\nNot enough gold!")
+        elif shop_action == "3":
+            shop_music.stop()
+            print("\nYou left the store.")
+            return state
+            #exits the store loop and returns the player to the main loop
+        else:
+            print("\nUnrecognised command.")
+
+def buy_stuff2(state):
+    """
+    Uses functions in gamefunctions to display and allow the player to purchase items.
+
+    Parameters:
+        state (dict): The gamestate dictionary
+        
+    Returns:
+        state (dict): Updates the gamestate dictionary
+    """
+    shop_action = "0"
+    shop_music = playsound("sounds/shop-music.mp3", block=False)
+    while shop_action != "3": #keeps the player in the store until they choose to leave
+        if not shop_music.is_alive():
+            shop_music = playsound("sounds/shop-music.mp3", block=False)
+        #prints a sign displaying item options to the player
+        print()
+        print_shop_menu("Sword", 100, "Shield", 200)
+        print(f"\nYou currently have {state["player_gold"]} gold.")
+        print("What would you like to buy?\n")
+        print("1) Sword \n2) Shield \n3) Nothing (Leave) ")
         shop_action = input()
         #if-else statments check which item the player purchased, then subtract its cost from their gold
         if shop_action == "1":
@@ -305,12 +390,18 @@ def buy_stuff(state):
             else:
                 print("\nNot enough gold!")
         elif shop_action == "2":
-            num, state["player_gold"] = purchase_item(50, state["player_gold"])
+            num, state["player_gold"] = purchase_item(200, state["player_gold"])
             if num > 0:
                 #add a bomb dictionary to inventory
                 playsound("sounds/purchase.mp3", block=False)
-                state["inventory"].append({"name": "bomb", "type": "consumable"})
-                print(f"\nYou purchased a bomb! You have {state["player_gold"]} gold left.")
+                state["inventory"].append({
+                    "name": "shield", 
+                    "type": "armor", 
+                    "defense_bonus": 5,
+                    "durability": 50,
+                    "equipped": False
+                })
+                print(f"\nYou purchased a shield! You have {state["player_gold"]} gold left.")
             else:
                 print("\nNot enough gold!")
         elif shop_action == "3":
@@ -400,9 +491,9 @@ def rest_at_inn(state):
         state (dict): Updates the gamestate dictionary
     """
     #same logic as other loops
-    print("It cost 10 gold to rest and refill your HP.")
+    print("\nIt costs 20 gold to rest and refill your HP.")
     print(f"You currently have {state["player_health"]}/{state["player_max_health"]} HP and {state["player_gold"]} gold.")
-    print("Would you like to rest?")
+    print("Would you like to rest?\n")
     print("1) Yes \n2) No")
     #defines inn_action so it can be used as loop variable
     inn_action = "0"
@@ -410,11 +501,11 @@ def rest_at_inn(state):
         inn_action = input()
         if inn_action == "1":
                 #checks to see if player can afford to stay
-                if state["player_gold"] < 10:
+                if state["player_gold"] < 20:
                     print("\nYou don't have enough money to stay here. The innkeeper kicks you out.")
                     return state #return to main loop since player won't have any other actions here
                 else:
-                    state["player_gold"] -= 10
+                    state["player_gold"] -= 20
                     state["player_health"] = state["player_max_health"]
                     playsound("sounds/hp-refill.mp3", block=False)
                     print("\nYou awake feeling refreshed!")

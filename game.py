@@ -34,10 +34,12 @@ if "adventure_savedata.json" not in os.listdir():
     "player_name": name,
     "player_max_health": 100,
     "player_health": 100,
-    "player_gold": 1000,
+    "player_gold": 50,
     "base_power": 10,
     "current_power": 10,
-    "inventory": [],
+    "base_defense": 0,
+    "current_defense": 0,
+    "inventory": [{"name": "bomb", "type": "consumable"},{"name": "potion", "type": "consumable"}],
     "map_state": {
         "player_pos": {"x": 0, "y": 0},
         "town_pos": {"x": 0, "y": 0},
@@ -65,20 +67,22 @@ else:
             town_x, town_y = 0, 0
             initial_monster = WanderingMonster.random_spawn([], [(player_x, player_y), (town_x, town_y)], 10, 10)
             state = {
-            "player_name": name,
-            "player_max_health": 100,
-            "player_health": 100,
-            "player_gold": 1000,
-            "base_power": 10,
-            "current_power": 10,
-            "inventory": [],
-            "map_state": {
-                "player_pos": {"x": 0, "y": 0},
-                "town_pos": {"x": 0, "y": 0},
-                "trees": [{"x": 5, "y": 5},{"x": 3, "y": 7},{"x": 7, "y": 2}, {"x": 4, "y": 3}, {"x": 2, "y": 2}]
-                },
-            "monsters": [initial_monster]
-            }
+                "player_name": name,
+                "player_max_health": 100,
+                "player_health": 100,
+                "player_gold": 50,
+                "base_power": 10,
+                "current_power": 10,
+                "base_defense": 0,
+                "current_defense": 0,
+                "inventory": [{"name": "bomb", "type": "consumable"},{"name": "potion", "type": "consumable"}],
+                "map_state": {
+                    "player_pos": {"x": 0, "y": 0},
+                    "town_pos": {"x": 0, "y": 0},
+                    "trees": [{"x": 5, "y": 5},{"x": 3, "y": 7},{"x": 7, "y": 2}, {"x": 4, "y": 3}, {"x": 2, "y": 2}]
+                    },
+                "monsters": [initial_monster]
+                }
             break
         else:
             print("Unrecognized command.")
@@ -92,7 +96,7 @@ while True:
     print(f"\nYou are currently in town.")
     print(f"Current HP: {state['player_health']}, Current Gold: {state['player_gold']}")
     print("What would you like to do?\n")
-    print("1) Explore \n2) Visit shop (purchase items) \n3) Equip Items \n4) Rest at inn \n5) Save & Quit")
+    print("1) Explore \n2) Visit shop \n3) Visit blacksmith \n4) Equip items \n5) Rest at inn \n6) Save & Quit")
     user_action = input()
     if user_action == "1":
         #stop playing menu music
@@ -134,12 +138,15 @@ while True:
         #runs the store loop
         state = gamefunctions.buy_stuff(state)
     elif user_action == "3":
+        main_music.stop()
+        state = gamefunctions.buy_stuff2(state)
+    elif user_action == "4":
         #runs the equip items loop
         state = gamefunctions.equip_items(state)
-    elif user_action == "4":
+    elif user_action == "5":
         #runs the inn loop
         state = gamefunctions.rest_at_inn(state)
-    elif user_action == "5":
+    elif user_action == "6":
         #on exit, export the current state dictionary to save file
         save_state = state.copy()
         save_state["monsters"] = [mon.to_dict() for mon in state["monsters"]]
