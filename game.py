@@ -12,8 +12,17 @@ import gamefunctions #gets the functions from gamefunctions for later use
 import json #for save data management
 import os #for checking status of save file
 import pygame #for drawing the game map
-from WanderingMonster import WanderingMonster
-    
+from WanderingMonster import WanderingMonster #get the WanderingMonster class
+from playsound3 import playsound #for playing sounds
+
+#tries to force the working directory to be where the game.py file is located
+#this is necessary for playing sounds from the sounds foler
+try:
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+except Exception as e:
+    print(f"Path error: {e}")
+
+main_music = playsound("sounds/main-music.mp3", block=False)
 #check for savedata in the current working directory
 #if none is found, initializes state dict. with default values
 if "adventure_savedata.json" not in os.listdir():
@@ -32,6 +41,7 @@ if "adventure_savedata.json" not in os.listdir():
     "map_state": {
         "player_pos": {"x": 0, "y": 0},
         "town_pos": {"x": 0, "y": 0},
+        "trees": [{"x": 5, "y": 5},{"x": 3, "y": 7},{"x": 7, "y": 2}, {"x": 4, "y": 3}, {"x": 2, "y": 2}]
         },
     "monsters": [initial_monster]
     }
@@ -65,6 +75,7 @@ else:
             "map_state": {
                 "player_pos": {"x": 0, "y": 0},
                 "town_pos": {"x": 0, "y": 0},
+                "trees": [{"x": 5, "y": 5},{"x": 3, "y": 7},{"x": 7, "y": 2}, {"x": 4, "y": 3}, {"x": 2, "y": 2}]
                 },
             "monsters": [initial_monster]
             }
@@ -74,7 +85,9 @@ else:
 
 gamefunctions.print_welcome(state["player_name"], 20)
 #main gameplay loop that runs until the user choses the option to quit
-while True: 
+while True:
+    if not main_music.is_alive():
+        main_music = playsound("sounds/main-music.mp3", block=False)    
     #prints give the player info and shows their options
     print(f"\nYou are currently in town.")
     print(f"Current HP: {state['player_health']}, Current Gold: {state['player_gold']}")
@@ -82,6 +95,8 @@ while True:
     print("1) Explore \n2) Visit shop (purchase items) \n3) Equip Items \n4) Rest at inn \n5) Save & Quit")
     user_action = input()
     if user_action == "1":
+        #stop playing menu music
+        main_music.stop()
         #moves the player back to town in case they force quits the map
         state["map_state"]["player_pos"] = {"x": 0, "y": 0}
         exploring = True
@@ -108,11 +123,14 @@ while True:
                     #if there's no monsters left, spawn two new ones
                     if len(state["monsters"]) == 0:
                         player_pos = (state["map_state"]["player_pos"]["x"], state["map_state"]["player_pos"]["y"])
-                        town_pos = (state["map_state"]["town_pos"]["x"], state["map_state"]["town_pos"]["y"])
-                        mon_1 = WanderingMonster.random_spawn([player_pos], [player_pos, town_pos], 10, 10)
-                        mon_2 = WanderingMonster.random_spawn([player_pos, (mon_1.x, mon_1.y)], [town_pos], 10, 10)
+                        forbidden = [(state["map_state"]["town_pos"]["x"], state["map_state"]["town_pos"]["y"])]
+                        for tree in state["map_state"]["trees"]:
+                            forbidden.append((tree["x"],tree["y"]))
+                        mon_1 = WanderingMonster.random_spawn([player_pos], forbidden, 10, 10)
+                        mon_2 = WanderingMonster.random_spawn([player_pos, (mon_1.x, mon_1.y)], forbidden, 10, 10)
                         state["monsters"].extend([mon_1, mon_2])
     elif user_action == "2":
+        main_music.stop()
         #runs the store loop
         state = gamefunctions.buy_stuff(state)
     elif user_action == "3":
@@ -132,6 +150,6 @@ while True:
     else:
         #if user command is invalid, sends a message then repeats the loop
         print("Unrecognized command.")
-        
+main_music.stop()        
 #when main loop is terminated, prints a goodbye message
 print("Thanks for playing!")

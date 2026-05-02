@@ -43,8 +43,10 @@ class WanderingMonster:
             None
         """
         while True:
+            #pick a random grid space
             rand_x = random.randint(0, grid_w - 1)
             rand_y = random.randint(0, grid_h - 1)
+            #check that the space isn't occupied, retry until it isn't
             if (rand_x, rand_y) not in occupied and (rand_x, rand_y) not in forbidden:
                 monster = gamefunctions.new_random_monster()
                 monster_color = (200, 0, 0)
@@ -102,10 +104,13 @@ class WanderingMonster:
         Returns:
             None
         """
+        #pick a random cardinal direction to move
         directions = [(0,1), (0,-1), (1,0), (-1,0)]
         x, y = random.choice(directions)
         new_x = self.x + x
         new_y = self.y + y
+        #check if the attempted directoin is empty
+        #if not empty, monster stays put
         if (0 <= new_x < grid_w) and (0 <= new_y < grid_h):
             if (new_x, new_y) not in occupied and (new_x, new_y) not in forbidden:
                 self.x = new_x

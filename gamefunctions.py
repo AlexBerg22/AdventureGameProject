@@ -23,6 +23,7 @@ explore_map continually draws a map using the game state as reference.
 
 #random numbers are required for monster generation so random is imported
 import random, pygame, time
+from playsound3 import playsound
 from WanderingMonster import WanderingMonster
 
 def purchase_item(itemPrice,startingMoney,quantityToPurchase=1):
@@ -202,7 +203,10 @@ def fight_monster_loop(state, monster):
     """
     print(f"\nYou encounter a wild {monster.mon_type}!")
     #while loops ends when either the player or monster dies
+    battle_music = playsound("sounds/battle-music.mp3", block=False)
     while state["player_health"] > 0 and monster.health > 0:
+        if not battle_music.is_alive():
+            battle_music = playsound("sounds/battle-music.mp3", block=False)
         get_total_stats(state)
         fight_action = fight_input(state, monster)
         if fight_action == "1":
@@ -214,11 +218,13 @@ def fight_monster_loop(state, monster):
                     #if it breaks, remove it and reset player power
                     if item["durability"] <= 0:
                         print(f"Your {item["name"]} broke!")
+                        playsound("sounds/break.mp3")
                         state["inventory"].remove(item)
                         state["current_power"] = state["base_power"]
                     else:
                         print(f"Weapon durability: {item["durability"]}")
                     break
+            playsound("sounds/battle-hit.mp3", block=False)
             monster.health -= state["current_power"]
             #if monster dies, it doesn't hurt the player
             if monster.health > 0:
@@ -230,14 +236,18 @@ def fight_monster_loop(state, monster):
                 #if they do, immediately defeat the monster and remove bomb from inventory
                 if item["name"] == "bomb":
                     print("\nYou threw a bomb!")
+                    playsound("sounds/explosion.mp3")
                     monster.health = 0
                     state["inventory"].remove(item)
                     bomb_found = True
                     break
             if not bomb_found:
                     print("\nYou don't have a bomb to throw!")
+                    playsound("sounds/battle-bomb-fail.mp3", block=False)
         elif fight_action == "3":
+            battle_music.stop()
             print("\nYou ran away!")
+            playsound("sounds/battle-flee.mp3")
             break
         else:
             #if user command is invalid, sends a message then repeats the loop
@@ -245,10 +255,14 @@ def fight_monster_loop(state, monster):
     #if-else statements check the two cases that cause the loop to end
     if state["player_health"] <= 0:
         state["player_health"]= 0 #prevents player_health from appearing as negative
+        battle_music.stop()
         print("You passed out...")
+        playsound("sounds/player-dies.mp3")
         return "player_fainted"
     elif monster.health <= 0:
+        battle_music.stop()
         print("You defeated the monster!")
+        playsound("sounds/battle-win.mp3")
         state["player_gold"] += monster.gold
         return "monster_defeated"
 
@@ -263,7 +277,10 @@ def buy_stuff(state):
         state (dict): Updates the gamestate dictionary
     """
     shop_action = "0"
+    shop_music = playsound("sounds/shop-music.mp3", block=False)
     while shop_action != "3": #keeps the player in the store until they choose to leave
+        if not shop_music.is_alive():
+            shop_music = playsound("sounds/shop-music.mp3", block=False)
         #prints a sign displaying item options to the player
         print()
         print_shop_menu("Sword", 100, "Bomb", 50)
@@ -276,6 +293,7 @@ def buy_stuff(state):
             num, state["player_gold"] = purchase_item(100, state["player_gold"])
             if num > 0:
                 #add a sword dictionary to inventory
+                playsound("sounds/purchase.mp3", block=False)
                 state["inventory"].append({
                     "name": "sword", 
                     "type": "weapon", 
@@ -290,11 +308,13 @@ def buy_stuff(state):
             num, state["player_gold"] = purchase_item(50, state["player_gold"])
             if num > 0:
                 #add a bomb dictionary to inventory
+                playsound("sounds/purchase.mp3", block=False)
                 state["inventory"].append({"name": "bomb", "type": "consumable"})
                 print(f"\nYou purchased a bomb! You have {state["player_gold"]} gold left.")
             else:
                 print("\nNot enough gold!")
         elif shop_action == "3":
+            shop_music.stop()
             print("\nYou left the store.")
             return state
             #exits the store loop and returns the player to the main loop
@@ -355,9 +375,11 @@ def equip_items(state):
                         for item in relevant_items:
                             item["equipped"] = False
                         selected_item["equipped"] = True
+                        playsound("sounds/equip-item.mp3", block=False)
                         print(f"You equipped the {selected_item['name']}!")
                     else:
                         selected_item["equipped"] = False
+                        playsound("sounds/equip-item.mp3", block=False)
                         print(f"You unequipped the {selected_item['name']}.")
                 #if they chose the "Back" option
                 elif idx == len(relevant_items):
@@ -394,11 +416,13 @@ def rest_at_inn(state):
                 else:
                     state["player_gold"] -= 10
                     state["player_health"] = state["player_max_health"]
+                    playsound("sounds/hp-refill.mp3", block=False)
                     print("\nYou awake feeling refreshed!")
                     return state
         elif inn_action != "2":
             print("\nUnrecognized command")
     print("\nYou leave the inn.")
+    return state
 
 def move_player(state, direction):
     """
@@ -422,9 +446,13 @@ def move_player(state, direction):
     #checks that the new position wouldn't be outside the boundry
     #skips updating the position if it would
     if (0 <= new_x < 10) and (0 <= new_y < 10):
+        for tree in map_state["trees"]:
+            if new_x == tree["x"] and new_y == tree["y"]:
+                playsound("sounds/walk-sound-quiet.mp3", block=False)
+                return "moved"
         pos["x"] = new_x
         pos["y"] = new_y
-
+    playsound("sounds/walk-sound-quiet.mp3", block=False)
     return "moved"
 
 def respawn_monster(state):
@@ -464,13 +492,17 @@ def explore_map(state):
     SCREEN = pygame.display.set_mode((320, 320))
     pygame.display.set_caption("World Map")
     map_state = state["map_state"]
+    world_music = playsound("sounds/overworld-music.mp3", block=False)
     while True:
+        if not world_music.is_alive():
+            world_music = playsound("sounds/overworld-music.mp3", block=False)
         #makes sure that the player doesn't encounter something if they didn't move
         direction = None
         #get any user inputs
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
+                world_music.stop()
                 return "quit"
             #look for keypresses
             if event.type == pygame.KEYDOWN:
@@ -487,16 +519,20 @@ def explore_map(state):
                 #check if player collided with something
                 if (player_x, player_y) == (town_x, town_y):
                     pygame.display.quit()
+                    world_music.stop()
                     return "town"
                 for monster in state["monsters"]:
                     if (player_x, player_y) == (monster.x, monster.y):
                         pygame.display.quit()
+                        world_music.stop()
                         return monster
                 #attempt to move each monster to unoccupied square
                 forbidden = [(town_x, town_y)]
+                for tree in map_state["trees"]:
+                    forbidden.append((tree["x"],tree["y"]))
                 for monster in state["monsters"]:
                     other_monsters = [(mon.x, mon.y) for mon in state["monsters"] if mon != monster]
-                    occupied = [(player_x, player_y), other_monsters]
+                    occupied = [(player_x, player_y)] + other_monsters
                     monster.move(occupied, forbidden, 10, 10)
                     
         #fill screen with black
@@ -509,6 +545,12 @@ def explore_map(state):
         #draw the town based on its position in the game state
         town_x, town_y = map_state["town_pos"]["x"], map_state["town_pos"]["y"]
         pygame.draw.circle(SCREEN, colors["green"], (town_x *32 + 16, town_y * 32 + 16), 15)
+        #draw obsticles
+        for tree in map_state["trees"]:
+            x, y = tree["x"], tree["y"]
+            pygame.draw.polygon(SCREEN, colors["green"], ((x*32+6,y*32+10),(x*32+16,y*32+1),(x*32+26,y*32+10)))
+            pygame.draw.polygon(SCREEN, colors["green"], ((x*32+6,y*32+18),(x*32+16,y*32+6),(x*32+26,y*32+18))) 
+            pygame.draw.rect(SCREEN, colors["green"], (x*32 + 11, y * 32 + 20, 10, 10))
         #draw all monsters based on their positions in the game state
         for monster in state["monsters"]:
             pygame.draw.circle(SCREEN, monster.color, (monster.x * 32 + 16, monster.y * 32 +16), 15)
